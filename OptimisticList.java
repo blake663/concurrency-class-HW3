@@ -1,22 +1,11 @@
-/*
- * OptimisticList.java
- *
- * Created on January 4, 2006, 1:49 PM
- *
- * From "Multiprocessor Synchronization and Concurrent Data Structures",
- * by Maurice Herlihy and Nir Shavit.
- * Copyright 2006 Elsevier Inc. All rights reserved.
- */
-package lists;
+// package lists;
 
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 /**
  * Optimistic List implementation.
- * @param T Item type.
- * @author Maurice Herlihy
  */
-public class OptimisticList<T> {
+public class OptimisticList {
   /**
    * First list entry
    */
@@ -33,21 +22,20 @@ public class OptimisticList<T> {
    * @param item element to add
    * @return true iff element was not there already
    */
-  public boolean add(T item) {
-    int key = item.hashCode();
+  public boolean add(int value) {
     while (true) {
       Entry pred = this.head;
       Entry curr = pred.next;
-      while (curr.key <= key) {
+      while (curr.value < value) {
         pred = curr; curr = curr.next;
       }
       pred.lock(); curr.lock();
       try {
         if (validate(pred, curr)) {
-          if (curr.key == key) { // present
+          if (curr.value == value) { // present
             return false;
           } else {               // not present
-            Entry entry = new Entry(item);
+            Entry entry = new Entry(value);
             entry.next = curr;
             pred.next = entry;
             return true;
@@ -63,18 +51,17 @@ public class OptimisticList<T> {
    * @param item element to remove
    * @return true iff element was present
    */
-  public boolean remove(T item) {
-    int key = item.hashCode();
+  public boolean remove(int value) {
     while (true) {
       Entry pred = this.head;
       Entry curr = pred.next;
-      while (curr.key < key) {
+      while (curr.value < value) {
         pred = curr; curr = curr.next;
       }
       pred.lock(); curr.lock();
       try {
         if (validate(pred, curr)) {
-          if (curr.key == key) { // present in list
+          if (curr.value == value) { // present in list
             pred.next = curr.next;
             return true;
           } else {               // not present in list
@@ -91,18 +78,17 @@ public class OptimisticList<T> {
    * @param item element to test
    * @return true iff element is present
    */
-  public boolean contains(T item) {
-    int key = item.hashCode();
+  public boolean contains(int value) {
     while (true) {
       Entry pred = this.head; // sentinel node;
       Entry curr = pred.next;
-      while (curr.key < key) {
+      while (curr.value < value) {
         pred = curr; curr = curr.next;
       }
       try {
         pred.lock(); curr.lock();
         if (validate(pred, curr)) {
-          return (curr.key == key);
+          return (curr.value == value);
         }
       } finally {                // always unlock
         pred.unlock(); curr.unlock();
@@ -113,11 +99,11 @@ public class OptimisticList<T> {
      * Check that prev and curr are still in list and adjacent
      * @param pred predecessor node
      * @param curr current node
-     * @return whther predecessor and current have changed
+     * @return whether predecessor and current have changed
      */
   private boolean validate(Entry pred, Entry curr) {
     Entry entry = head;
-    while (entry.key <= pred.key) {
+    while (entry.value <= pred.value) {
       if (entry == pred)
         return pred.next == curr;
       entry = entry.next;
@@ -129,13 +115,9 @@ public class OptimisticList<T> {
    */
   private class Entry {
     /**
-     * actual item
+     * serves as key and value
      */
-    T item;
-    /**
-     * item's hash code
-     */
-    int key;
+    int value;
     /**
      * next entry in list
      */
@@ -145,20 +127,10 @@ public class OptimisticList<T> {
      */
     Lock lock;
     /**
-     * Constructor for usual entry
-     * @param item element in list
+     * value has concrete type int
      */
-    Entry(T item) {
-      this.item = item;
-      this.key = item.hashCode();
-      lock = new ReentrantLock();
-    }
-    /**
-     * Constructor for sentinel entry
-     * @param key should be min or max int value
-     */
-    Entry(int key) {
-      this.key = key;
+    Entry(int value) {
+      this.value = value;
       lock = new ReentrantLock();
     }
     /**

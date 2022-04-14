@@ -3,9 +3,3 @@ class problem1 {
         System.out.println("hello yall");
     }
 }
-
-class linkedList {
-    class node {
-        
-    }
-}
