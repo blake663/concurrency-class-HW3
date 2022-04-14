@@ -33,7 +33,7 @@ class Problem1 {
 
         for (Thread t : threads)
             try {
-                t.wait(1000);
+                t.join();
             } catch (Exception e) {};
         System.out.println("final amt == " + cnt);
 
