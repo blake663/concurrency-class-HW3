@@ -38,7 +38,7 @@ class Problem1 {
             try {
                 t.join();
             } catch (Exception e) {};
-        System.out.println("final amt == " + cnt);
+        System.out.println("final amount of inserts and deletions: " + cnt);
         assert cnt.get() == numPresents;
         assert optimisticList.size() == 0;
 
@@ -47,7 +47,7 @@ class Problem1 {
 
 	    long duration = Duration.between(start, finish).toMillis();
         System.out.println("the execution time was " + duration + " milliseconds");
-        System.out.println(Servant.fails.get());
+        System.out.println(Servant.fails.get() + " deletion retries");
     }
 
 
