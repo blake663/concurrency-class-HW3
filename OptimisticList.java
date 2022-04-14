@@ -96,6 +96,20 @@ public class OptimisticList {
     }
   }
   /**
+   * return number of nodes in list
+   * (for testing purposes only)
+   * @return size as int
+   */
+  public int size() {
+    Entry entry = head.next;
+    int count = 0;
+    while (entry.value < Integer.MAX_VALUE) {
+      entry = entry.next;
+      count++;
+    }
+    return count;
+  }
+  /**
      * Check that prev and curr are still in list and adjacent
      * @param pred predecessor node
      * @param curr current node

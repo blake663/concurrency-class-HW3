@@ -1,19 +1,21 @@
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 
 class Problem1 {
 
     static List<Integer> unsortedValues;
-    static AtomicInteger start = new AtomicInteger();
-    static AtomicInteger end   = new AtomicInteger();
-    static volatile AtomicInteger cnt   = new AtomicInteger();
-    static boolean finished = false;
-    static int numPresents = 5000;
+    static AtomicInteger rmvPtr = new AtomicInteger();
+    static AtomicInteger addPtr   = new AtomicInteger();
+    static AtomicInteger cnt   = new AtomicInteger();
+    // static boolean finished = false;
+    static int numPresents = 500000;
 
     static final int numThreads = 8;
-    static OptimisticList a = new OptimisticList();
+    static OptimisticList optimisticList = new OptimisticList();
 
 
     public static void main(String [] args) {
@@ -22,8 +24,9 @@ class Problem1 {
             unsortedValues.add(i);
         
         Collections.shuffle(unsortedValues);
-        // for (int i = 0; i < 10; i++)
-        // System.out.println(values.get(i));
+
+        // start timer
+		Instant start = Instant.now();
 
         Thread threads[] = new Thread[numThreads];
         for (int i = 0; i < numThreads; i++) {
@@ -36,12 +39,21 @@ class Problem1 {
                 t.join();
             } catch (Exception e) {};
         System.out.println("final amt == " + cnt);
+        assert cnt.get() == numPresents;
+        assert optimisticList.size() == 0;
 
+        // end timer
+	    Instant finish = Instant.now();
+
+	    long duration = Duration.between(start, finish).toMillis();
+        System.out.println("the execution time was " + duration + " milliseconds");
+        System.out.println(Servant.fails.get());
     }
 
 
 
     static class Servant implements Runnable {
+        static AtomicInteger fails = new AtomicInteger();
         int id;
 
         Servant(int id) {
@@ -51,21 +63,27 @@ class Problem1 {
         @Override
         public void run() {
             while (true) {
-                int index = start.getAndIncrement();
+                int index = addPtr.getAndIncrement();
                 if (index >= numPresents) break;
                 int value = unsortedValues.get(index);
-                a.add(value);
+                if (!optimisticList.add(value))
+                    throw new Error("Failed to add an item");
                 // System.out.println("thread " + id + " added " + value);
+                
+                index = rmvPtr.getAndIncrement();
+                if (index >= numPresents) break;
+                value = unsortedValues.get(index);
+                while (!optimisticList.remove(value)) {
+                    fails.getAndIncrement();
+                    try {
+                        Thread.sleep(10);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
                 cnt.getAndIncrement();
             }
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            System.out.println("thread " + id + " ran");
-            return;
+            // System.out.println("thread " + id + " ran");
         }
     }
 
